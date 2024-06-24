@@ -1,12 +1,14 @@
 package br.ada.caixa.dto.request;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
+import javax.persistence.Entity;
 import java.math.BigDecimal;
 
-@Getter
-@Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TransferenciaRequestDto {
 
     private Long numeroContaOrigem;

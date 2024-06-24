@@ -1,6 +1,8 @@
 package br.ada.caixa.controller;
 
 import br.ada.caixa.dto.request.DepositoRequestDto;
+import br.ada.caixa.dto.request.SaqueRequestDto;
+import br.ada.caixa.dto.request.TransferenciaRequestDto;
 import br.ada.caixa.entity.Cliente;
 import br.ada.caixa.entity.Conta;
 import br.ada.caixa.entity.TipoCliente;
@@ -29,6 +31,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -88,8 +91,16 @@ class OperacoesBancariasControllerITTest {
                 .tipo(TipoCliente.PF)
                 .createdAt(LocalDate.now())
                 .build();
+        var cliente3 = Cliente.builder()
+                .documento("06081970418")
+                .nome("Teste 3")
+                .dataNascimento(LocalDate.now())
+                .status(StatusCliente.ATIVO)
+                .tipo(TipoCliente.PF)
+                .createdAt(LocalDate.now())
+                .build();
 
-        clienteRepository.saveAllAndFlush(List.of(cliente1, cliente2));
+        clienteRepository.saveAllAndFlush(List.of(cliente1, cliente2, cliente3));
 
         //CRIAR CONTAS
         var contaCorrente1 = Conta.builder()
@@ -110,7 +121,17 @@ class OperacoesBancariasControllerITTest {
                 .createdAt(LocalDate.now())
                 .build();
 
-        contaRepository.saveAllAndFlush(List.of(contaCorrente1, contaCorrente2));
+        var contaCorrente3 = Conta.builder()
+                .numero(3L)
+                .saldo(BigDecimal.valueOf(200L))
+                .tipo(TipoConta.CONTA_CORRENTE)
+//                .cliente(clienteRepository.findByDocumento(cliente2.getDocumento()).get())
+                .cliente(cliente3)
+                .createdAt(LocalDate.now())
+                .build();
+
+
+        contaRepository.saveAllAndFlush(List.of(contaCorrente1, contaCorrente2, contaCorrente3));
 
     }
 
@@ -133,6 +154,8 @@ class OperacoesBancariasControllerITTest {
         //when
         var response = restTemplate.postForEntity(url + "/depositar", depositoRequestDto, Void.class);
 
+
+
         //then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -144,10 +167,37 @@ class OperacoesBancariasControllerITTest {
 
     @Test
     void sacar() {
+        final var valor = BigDecimal.valueOf(100L);
+        final var numeroConta = 3L;
+        DecimalFormat df = new DecimalFormat("#.00");
+        SaqueRequestDto saqueRequestDto = SaqueRequestDto.builder().numeroConta(numeroConta).valor(valor).build();
+
+        //when
+        var response = restTemplate.postForEntity(url + "/sacar", saqueRequestDto, Void.class);
+
+        //then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertEquals(df.format(100), df.format(contaRepository.findByNumero(numeroConta).get().getSaldo()));
+
+        Mockito.verify(contaRepository).save(any(Conta.class));
     }
 
     @Test
     void transferencia() {
+        final var valor = BigDecimal.valueOf(100L);
+        final var numeroContaOrigem = 3L;
+        final var numeroContaDestino = 1L;
+        DecimalFormat df = new DecimalFormat("#.00");
+        TransferenciaRequestDto transferenciaRequestDto = TransferenciaRequestDto.builder().numeroContaOrigem(numeroContaOrigem).numeroContaDestino(numeroContaDestino).valor(valor).build();
+        //when
+        var response = restTemplate.postForEntity(url + "/transferir", transferenciaRequestDto, Void.class);
+
+        //then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertEquals(df.format(100), df.format(contaRepository.findByNumero(numeroContaOrigem).get().getSaldo()));
+        assertEquals(df.format(100), df.format(contaRepository.findByNumero(numeroContaDestino).get().getSaldo()));
     }
 
     @Test

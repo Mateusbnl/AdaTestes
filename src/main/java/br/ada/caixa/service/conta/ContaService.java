@@ -1,5 +1,6 @@
 package br.ada.caixa.service.conta;
 
+import br.ada.caixa.entity.Cliente;
 import br.ada.caixa.entity.Conta;
 import br.ada.caixa.entity.TipoConta;
 import br.ada.caixa.exceptions.ValidacaoException;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,5 +31,4 @@ public class ContaService {
                 })
                 .orElseThrow(() -> new ValidacaoException("Cliente nao encontrado com o CPF informado!"));
     }
-
 }
